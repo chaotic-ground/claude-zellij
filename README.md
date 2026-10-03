@@ -1,5 +1,7 @@
 # claude-zellij
 
+Unofficial; not affiliated with the Zellij project.
+
 A Claude Code plugin for a coordinator session that runs other Claude Code
 sessions in zellij panes. It teaches Claude to:
 
