@@ -49,31 +49,40 @@ zellij action list-panes --json --command |
 
 ## Open a Claude session in a new pane
 
+Start the session with a name and no prompt, then send the brief with
+your messaging tool (SendMessage) addressed to that name:
+
 ```bash
 zellij action new-pane --no-focus --cwd "$dir" --name "$name" -- \
-  claude --remote-control "$name" -n "$name" "$prompt"
+  claude --remote-control "$name" -n "$name"
 ```
 
+- Do not put the brief on the command line. The shell expands backticks
+  and `$` in it, so code spans such as `` `$wgFoo = true` `` run as
+  commands and vanish from the prompt, and the whole line stays visible
+  to anyone who runs `list-panes --command`.
+- Once the prompt box shows, send the brief with SendMessage to `$name`.
+  The text arrives verbatim, and the same channel carries the follow-ups.
 - It prints the new pane id as `terminal_<id>`. Keep it.
 - `--remote-control <name>` makes the session reachable from claude.ai under
   that name. `-n <name>` sets the name shown in the prompt box and in
   `/resume`. Give both the same value.
 - `--no-focus` leaves the user where they are.
 - `$dir` must be a folder Claude Code already trusts. In a new folder the
-  session stops on the trust prompt before it reads `$prompt`, and the
-  rules above say you do not answer it. Ask the user to open the folder in
-  Claude once, or pick a trusted parent.
-- The whole command line, prompt included, is visible to anyone who runs
-  `list-panes --command`. Keep secrets out of it.
+  session stops on the trust prompt, and the rules above say you do not
+  answer it. Ask the user to open the folder in Claude once, or pick a
+  trusted parent.
 
-Confirm it started:
+Confirm it started, then brief it:
 
 ```bash
 zellij action dump-screen --pane-id "$id"
 ```
 
-You should see the Claude Code prompt box and the first turn under way. If
-you see "Do you trust the files in this folder?", stop and tell the user.
+You should see the Claude Code prompt box, idle. If you see "Do you trust
+the files in this folder?", stop and tell the user. Otherwise send the
+brief by SendMessage to `$name`; if the name is not listed yet, wait a
+moment and list agents again.
 
 ## Type a slash command into another pane
 
