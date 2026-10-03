@@ -1,0 +1,6 @@
+---
+# Line length is the only rule turned off. The long lines here are actions
+# pinned by SHA, and those cannot be wrapped.
+extends: relaxed
+rules:
+  line-length: disable

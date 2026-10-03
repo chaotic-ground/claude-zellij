@@ -1,0 +1,49 @@
+---
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint
+
+      - name: yamllint
+        run: yamllint .github/workflows/ .yamllint
+
+      - name: actionlint
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7  # v2.2.0
+
+      # Claude Code reads these two files to install the plugin. A syntax
+      # error makes `/plugin marketplace add` fail with no useful message.
+      - name: Plugin manifests parse
+        run: |
+          jq -e '.plugins[0].name' .claude-plugin/marketplace.json
+          jq -e '.name' .claude-plugin/plugin.json
+
+      # The front matter is what Claude Code reads to decide when to load
+      # the skill, so name and description must both be there.
+      - name: Skill front matter
+        run: |
+          front=$(sed -n '2,/^---$/p' skills/zellij/SKILL.md)
+          printf '%s\n' "$front" | grep -q '^name: zellij$'
+          printf '%s\n' "$front" | grep -q '^description: .'
