@@ -1,3 +1,7 @@
+import {
+  id = "claude-zellij:24402153"
+  to = github_repository_ruleset.default
+}
 resource "github_repository_ruleset" "default" {
   name        = "default"
   repository  = github_repository.this.name
