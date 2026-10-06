@@ -1,6 +1,6 @@
 {
   "name": "zellij",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Drive other Claude Code sessions in zellij panes: open a pane running claude --remote-control, type slash commands into another pane, read a pane. Unofficial; not affiliated with the Zellij project.",
   "author": {
     "name": "chaotic-ground"

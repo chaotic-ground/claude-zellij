@@ -1,6 +1,6 @@
 ---
 name: zellij
-description: Drive other Claude Code sessions in zellij panes from a coordinator session. Use when opening a pane that runs `claude --remote-control`, typing a slash command such as /rename or /remote-control into another Claude pane, or reading what another pane shows. Needs zellij 0.44 or later and uses only the built-in `zellij action` CLI.
+description: Drive other Claude Code sessions in zellij panes from a coordinator session. Use when opening a pane that runs `claude --remote-control`, typing a slash command such as /rename or /remote-control into another Claude pane, reading what another pane shows, or closing a Claude pane. Needs zellij 0.44 or later and uses only the built-in `zellij action` CLI.
 allowed-tools:
   - Bash(zellij action list-panes:*)
   - Bash(zellij action dump-screen:*)
@@ -9,8 +9,8 @@ allowed-tools:
 # zellij
 
 You are a coordinator running inside a zellij pane. Other Claude Code
-sessions run in sibling panes. This skill covers three things you do to
-them: open one, type a slash command into one, and read one.
+sessions run in sibling panes. This skill covers four things you do to
+them: open one, type a slash command into one, read one, and close one.
 
 Everything here is the built-in `zellij action` CLI (tested on 0.45.1). No
 plugin is loaded. Every action that touches a pane takes `--pane-id`, so
@@ -99,6 +99,8 @@ zellij action write --pane-id "$id" 13
 - `dump-screen` shows the box before you commit. If the text is not
   there, or something else is in the box (a half-typed message from the
   user, an open menu), do not press Enter. Report what you saw.
+- Text in the box before you type may be a suggestion, not a draft. See
+  "Tell a suggestion from a draft" below.
 - The pause keeps the Enter out of the same paste as the text. Without it
   the two can arrive as one paste, and the Enter becomes a newline in the
   box instead of a submit.
@@ -128,6 +130,44 @@ zellij action dump-screen --pane-id "$id" --full   # with scrollback
 Without `--path` it prints to stdout. Read the bottom of the dump: the
 prompt box and the status line under it tell you whether the session is
 idle, busy, or waiting on a prompt.
+
+### Tell a suggestion from a draft
+
+When a session is idle, Claude Code may show a suggested next prompt in
+the box, drawn in grey. A plain `dump-screen` drops colour, so the
+suggestion looks the same as text the user typed. Dump with `--ansi` and
+look at the line after `❯`:
+
+```bash
+zellij action dump-screen --pane-id "$id" --ansi | tail -n 5
+```
+
+- A suggestion is drawn faint: SGR 2, `ESC[2m`, just before the text.
+- A draft the user typed has no `ESC[2m`.
+
+A suggestion is not the user's input. Typing replaces it, so you can go
+ahead. A draft is the user's; leave it and report it.
+
+## Close a Claude session and its pane
+
+Exit Claude first so it shuts down cleanly, then close the pane:
+
+```bash
+zellij action write-chars --pane-id "$id" '/exit'
+zellij action dump-screen --pane-id "$id"
+sleep 1
+zellij action write --pane-id "$id" 13
+zellij action list-panes --json --command
+zellij action close-pane --pane-id "$id"
+```
+
+- Before typing, check the box as above. A suggestion is fine to type
+  over; a draft is not.
+- After the Enter, `list-panes` should show that pane's `pane_command`
+  as the shell (for example `/bin/bash`), not `claude`. Close the pane
+  only then.
+- Closing the pane while Claude still runs kills it without the exit
+  steps. Do not use `close-pane` as the first move.
 
 ## Not covered
 
