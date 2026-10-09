@@ -39,8 +39,8 @@ zellij action list-panes --json --command
 
 Each terminal pane has `id`, `title`, `pane_command`, `pane_cwd` and
 `exited`. A Claude pane started by this skill has a `pane_command` that
-begins with `claude --remote-control <name>`. A Claude pane sets its own
-title from the conversation, so match on `pane_command`, not `title`.
+contains `--remote-control <name>`. A Claude pane sets its own title from
+the conversation, so match on `pane_command`, not `title`.
 
 ```bash
 zellij action list-panes --json --command |
@@ -68,6 +68,11 @@ zellij action new-pane --no-focus --cwd "$dir" --name "$name" -- \
   that name. `-n <name>` sets the name shown in the prompt box and in
   `/resume`. Give both the same value.
 - `--no-focus` leaves the user where they are.
+- Do not add `--stacked` or `--near-current-pane`. On 0.45.1, panes opened
+  with both (from a floating coordinator pane) ran, but were missing from
+  `list-panes` and every tab, and `dump-screen` returned nothing. Which
+  flag caused it is not known. If you need many panes, say so and open
+  them plainly, or in a new tab.
 - `$dir` must be a folder Claude Code already trusts. In a new folder the
   session stops on the trust prompt, and the rules above say you do not
   answer it. Ask the user to open the folder in Claude once, or pick a
@@ -83,6 +88,18 @@ You should see the Claude Code prompt box, idle. If you see "Do you trust
 the files in this folder?", stop and tell the user. Otherwise send the
 brief by SendMessage to `$name`; if the name is not listed yet, wait a
 moment and list agents again.
+
+### Resume an old session
+
+```bash
+zellij action new-pane --no-focus --cwd "$dir" --name "$name" -- \
+  claude --resume "$session_id" --remote-control "$name" -n "$name"
+```
+
+- `$dir` must be the project the transcript belongs to. From another
+  folder, `--resume` does not find the session.
+- To revive many, open them in batches (eight at a time worked) and check
+  each before the next batch, so memory stays safe.
 
 ## Type a slash command into another pane
 
@@ -144,30 +161,50 @@ zellij action dump-screen --pane-id "$id" --ansi | tail -n 5
 
 - A suggestion is drawn faint: SGR 2, `ESC[2m`, just before the text.
 - A draft the user typed has no `ESC[2m`.
+- An empty box is not blank either: the line after `❯` holds a
+  non-breaking space (U+00A0, bytes `c2 a0`), so a regex such as `❯ *$`
+  misses it. Use `grep -P '^❯[ \x{a0}]*$'`.
 
 A suggestion is not the user's input. Typing replaces it, so you can go
 ahead. A draft is the user's; leave it and report it.
 
 ## Close a Claude session and its pane
 
-Exit Claude first so it shuts down cleanly, then close the pane:
+Exit Claude first so it shuts down cleanly, then close the pane in the
+same step. A finished session's pane left open is clutter the user has
+to clean up.
 
 ```bash
 zellij action write-chars --pane-id "$id" '/exit'
 zellij action dump-screen --pane-id "$id"
 sleep 1
 zellij action write --pane-id "$id" 13
-zellij action list-panes --json --command
+zellij action list-panes --json |
+  jq '.[] | select(.id == '"$id"' and (.is_plugin | not)) | {exited, is_held}'
 zellij action close-pane --pane-id "$id"
 ```
 
 - Before typing, check the box as above. A suggestion is fine to type
   over; a draft is not.
-- After the Enter, `list-panes` should show that pane's `pane_command`
-  as the shell (for example `/bin/bash`), not `claude`. Close the pane
-  only then.
+- A pane started with `-- claude …` is held after Claude exits: it shows
+  "Resume this session with: claude --resume …", and `list-panes` keeps
+  `pane_command` as the claude line with `exited: true` and
+  `is_held: true`. Wait for `exited: true` (or that line in
+  `dump-screen`), then close the pane.
 - Closing the pane while Claude still runs kills it without the exit
   steps. Do not use `close-pane` as the first move.
+- `new-pane --close-on-exit` makes the pane close itself when Claude
+  exits, at the cost of losing the screen if Claude crashes.
+
+If the pane cannot be read (for example it is missing from `list-panes`),
+stop the process instead. SIGTERM exits Claude cleanly:
+
+```bash
+pgrep -af -- "-n $name\$"
+kill -TERM "$pid"
+```
+
+Use this only when you cannot check the prompt box first.
 
 ## Not covered
 
