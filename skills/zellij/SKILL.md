@@ -161,6 +161,9 @@ zellij action dump-screen --pane-id "$id" --ansi | tail -n 5
 
 - A suggestion is drawn faint: SGR 2, `ESC[2m`, just before the text.
 - A draft the user typed has no `ESC[2m`.
+- An empty box is not blank either: the line after `❯` holds a
+  non-breaking space (U+00A0, bytes `c2 a0`), so a regex such as `❯ *$`
+  misses it. Use `grep -P '^❯[ \x{a0}]*$'`.
 
 A suggestion is not the user's input. Typing replaces it, so you can go
 ahead. A draft is the user's; leave it and report it.
