@@ -39,8 +39,8 @@ zellij action list-panes --json --command
 
 Each terminal pane has `id`, `title`, `pane_command`, `pane_cwd` and
 `exited`. A Claude pane started by this skill has a `pane_command` that
-begins with `claude --remote-control <name>`. A Claude pane sets its own
-title from the conversation, so match on `pane_command`, not `title`.
+contains `--remote-control <name>`. A Claude pane sets its own title from
+the conversation, so match on `pane_command`, not `title`.
 
 ```bash
 zellij action list-panes --json --command |
@@ -68,6 +68,11 @@ zellij action new-pane --no-focus --cwd "$dir" --name "$name" -- \
   that name. `-n <name>` sets the name shown in the prompt box and in
   `/resume`. Give both the same value.
 - `--no-focus` leaves the user where they are.
+- Do not add `--stacked` or `--near-current-pane`. On 0.45.1, panes opened
+  with both (from a floating coordinator pane) ran, but were missing from
+  `list-panes` and every tab, and `dump-screen` returned nothing. Which
+  flag caused it is not known. If you need many panes, say so and open
+  them plainly, or in a new tab.
 - `$dir` must be a folder Claude Code already trusts. In a new folder the
   session stops on the trust prompt, and the rules above say you do not
   answer it. Ask the user to open the folder in Claude once, or pick a
@@ -83,6 +88,18 @@ You should see the Claude Code prompt box, idle. If you see "Do you trust
 the files in this folder?", stop and tell the user. Otherwise send the
 brief by SendMessage to `$name`; if the name is not listed yet, wait a
 moment and list agents again.
+
+### Resume an old session
+
+```bash
+zellij action new-pane --no-focus --cwd "$dir" --name "$name" -- \
+  claude --resume "$session_id" --remote-control "$name" -n "$name"
+```
+
+- `$dir` must be the project the transcript belongs to. From another
+  folder, `--resume` does not find the session.
+- To revive many, open them in batches (eight at a time worked) and check
+  each before the next batch, so memory stays safe.
 
 ## Type a slash command into another pane
 
