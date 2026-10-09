@@ -170,24 +170,41 @@ ahead. A draft is the user's; leave it and report it.
 
 ## Close a Claude session and its pane
 
-Exit Claude first so it shuts down cleanly, then close the pane:
+Exit Claude first so it shuts down cleanly, then close the pane in the
+same step. A finished session's pane left open is clutter the user has
+to clean up.
 
 ```bash
 zellij action write-chars --pane-id "$id" '/exit'
 zellij action dump-screen --pane-id "$id"
 sleep 1
 zellij action write --pane-id "$id" 13
-zellij action list-panes --json --command
+zellij action list-panes --json |
+  jq '.[] | select(.id == '"$id"' and (.is_plugin | not)) | {exited, is_held}'
 zellij action close-pane --pane-id "$id"
 ```
 
 - Before typing, check the box as above. A suggestion is fine to type
   over; a draft is not.
-- After the Enter, `list-panes` should show that pane's `pane_command`
-  as the shell (for example `/bin/bash`), not `claude`. Close the pane
-  only then.
+- A pane started with `-- claude …` is held after Claude exits: it shows
+  "Resume this session with: claude --resume …", and `list-panes` keeps
+  `pane_command` as the claude line with `exited: true` and
+  `is_held: true`. Wait for `exited: true` (or that line in
+  `dump-screen`), then close the pane.
 - Closing the pane while Claude still runs kills it without the exit
   steps. Do not use `close-pane` as the first move.
+- `new-pane --close-on-exit` makes the pane close itself when Claude
+  exits, at the cost of losing the screen if Claude crashes.
+
+If the pane cannot be read (for example it is missing from `list-panes`),
+stop the process instead. SIGTERM exits Claude cleanly:
+
+```bash
+pgrep -af -- "-n $name\$"
+kill -TERM "$pid"
+```
+
+Use this only when you cannot check the prompt box first.
 
 ## Not covered
 
