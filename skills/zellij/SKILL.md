@@ -206,6 +206,25 @@ kill -TERM "$pid"
 
 Use this only when you cannot check the prompt box first.
 
+## Keep a tiled pane in a floating coordinator's tab
+
+If you run in a floating pane, closing the last tiled pane in your tab
+closes the tab, and zellij kills the floating panes in it, you included.
+No setting turns this off (zellij issue #2447, open since 2023).
+
+Before you close a pane, count the other tiled panes in the same tab:
+
+```bash
+zellij action list-panes --json |
+  jq --argjson me "$ZELLIJ_PANE_ID" --argjson id "$id" '
+    (.[] | select(.id == $me and (.is_plugin | not)) | .tab_id) as $tab
+    | [.[] | select(.tab_id == $tab and (.is_plugin | not)
+        and (.is_floating | not) and .id != $id)] | length'
+```
+
+If it prints 0 and you are floating, do not close the pane. Report it
+and let the user decide, or open a plain shell pane in the tab first.
+
 ## Not covered
 
 - Layout files and tabs. `zellij action new-tab --layout` and
