@@ -174,6 +174,15 @@ Exit Claude first so it shuts down cleanly, then close the pane in the
 same step. A finished session's pane left open is clutter the user has
 to clean up.
 
+Ask the session before you close it. Its screen can look finished while
+a background job still runs or a worktree still waits for cleanup. Read
+the pane first, then send a message (SendMessage) such as: "Is it safe
+to close this session? Reply 'safe to close' in one line if no
+background job or cleanup is left; otherwise name what is left in one
+line." Close only after it says yes. If it names something left, report
+that to the user instead of closing. The `close` skill
+(`/zellij:close <session>`) runs this check and the close in one go.
+
 ```bash
 zellij action write-chars --pane-id "$id" '/exit'
 zellij action dump-screen --pane-id "$id"

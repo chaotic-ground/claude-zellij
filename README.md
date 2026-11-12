@@ -8,7 +8,10 @@ sessions in zellij panes. It teaches Claude to:
 - open a pane running `claude --remote-control <name>`,
 - type a slash command such as `/rename` into another Claude pane and
   submit it,
-- read what another pane shows.
+- read what another pane shows,
+- close a finished session: `/zellij:close <session>` asks the session
+  whether it is safe to close and closes it and its pane only once it
+  says yes.
 
 It uses only the built-in `zellij action` CLI, so there is no zellij plugin
 to load. Needs zellij 0.44 or later; tested on 0.45.1.
