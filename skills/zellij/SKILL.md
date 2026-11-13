@@ -193,8 +193,9 @@ zellij action list-panes --json |
 zellij action close-pane --pane-id "$id"
 ```
 
-- Before typing, check the box as above. A suggestion is fine to type
-  over; a draft is not.
+- Before typing, check the box as above, with `--ansi`. A grey
+  suggestion is fine to type over; a draft is not. Do not call grey text
+  a draft from a plain dump.
 - A pane started with `-- claude …` is held after Claude exits: it shows
   "Resume this session with: claude --resume …", and `list-panes` keeps
   `pane_command` as the claude line with `exited: true` and

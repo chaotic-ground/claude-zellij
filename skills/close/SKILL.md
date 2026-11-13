@@ -21,8 +21,13 @@ section for the mechanics. This skill adds the order and the check.
 1. Find the pane. Match the session name against `list-panes --json`
    (the pane title or the `-n <name>` in `pane_command`). If none or
    more than one match, stop and tell the user.
-2. Read the pane with `dump-screen`. Note a draft in the prompt box; do
-   not type over it.
+2. Read the pane with `dump-screen --ansi`, not a plain `dump-screen`.
+   Text after `❯` may be a grey suggestion rather than a draft, and a
+   plain dump drops the colour that tells them apart. Text that starts
+   with `ESC[2m` (faint) is a suggestion: `/exit` replaces it, so go
+   ahead. Text without it is the user's draft: do not type over it;
+   report it and stop. See "Tell a suggestion from a draft" in the
+   `zellij` skill.
 3. Ask the session. Send it a message (SendMessage, to the name exactly
    as `ListAgents` prints it):
 
